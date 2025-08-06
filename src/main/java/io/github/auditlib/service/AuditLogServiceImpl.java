@@ -1,19 +1,17 @@
 package io.github.auditlib.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.auditlib.config.AuditProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Бизнес логика стартера
@@ -180,49 +178,65 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     /**
      * Логирование события метода в кафку (как json объект)
+     * Дополнительные настройки для exactly-once гарантии
      */
-    public void logMethodToKafka(Map<String, Object> event) {
+    public boolean logMethodToKafka(Map<String, Object> event) {
         try {
-            String jsonMessage = objectMapper.writeValueAsString(event);
-            String topic = properties.getKafka().getMethodTopic();
-            String correlationId = (String) event.get("correlationId");
+            Boolean res = kafkaTemplate.executeInTransaction(template -> {
+                String correlationId = (String) event.get("correlationId");
+                try {
+                    String jsonMessage = objectMapper.writeValueAsString(event);
+                    String topic = properties.getKafka().getMethodTopic();
 
-            CompletableFuture<SendResult<String, String>> future =
-                    kafkaTemplate.send(topic, correlationId, jsonMessage);
+                    template.send(topic, correlationId, jsonMessage).get(30, TimeUnit.SECONDS);
 
-            future.whenComplete((result, ex) -> {
-                if (ex != null) {
-                    logger.error("Failed to send method audit event to Kafka", ex);
+                    logger.debug("Method event sent successfully: correlationId={}", correlationId);
+                    return true;
+
+                } catch (Exception e) {
+                    logger.error("Failed to send method event, correlationId={}", correlationId, e);
+                    throw new RuntimeException("Kafka send failed", e);
                 }
             });
 
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize method audit event to JSON", e);
+            return res != null ? res : false;
+
+        } catch (Exception e) {
+            logger.error("Kafka transaction failed", e);
+            return false;
         }
     }
 
     /**
      * Логирование HTTP события в кафку (как json объект)
+     * Дополнительные настройки для exactly-once гарантии
      */
-    public void logHttpToKafka(Map<String, Object> event) {
+    public boolean logHttpToKafka(Map<String, Object> event) {
         try {
-            String jsonMessage = objectMapper.writeValueAsString(event);
-            String topic = properties.getKafka().getHttpTopic();
-            String direction = (String) event.get("direction");
-            String method = (String) event.get("method");
-            String key = direction + "_" + method + "_" + System.currentTimeMillis();
+            Boolean res = kafkaTemplate.executeInTransaction(template -> {
+                try {
+                    String jsonMessage = objectMapper.writeValueAsString(event);
+                    String topic = properties.getKafka().getHttpTopic();
+                    String direction = (String) event.get("direction");
+                    String method = (String) event.get("method");
+                    String key = direction + "_" + method + "_" + System.currentTimeMillis();
 
-            CompletableFuture<SendResult<String, String>> future =
-                    kafkaTemplate.send(topic, key, jsonMessage);
+                    template.send(topic, key, jsonMessage).get(30, TimeUnit.SECONDS);
 
-            future.whenComplete((result, ex) -> {
-                if (ex != null) {
-                    logger.error("Failed to send HTTP audit event to Kafka", ex);
+                    logger.debug("HTTP audit event sent successfully: key={}", key);
+                    return true;
+
+                } catch (Exception e) {
+                    logger.error("Failed to send HTTP audit event", e);
+                    throw new RuntimeException("Kafka send failed", e);
                 }
             });
 
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize HTTP audit event to JSON", e);
+            return res != null ? res : false;
+
+        } catch (Exception e) {
+            logger.error("Kafka transaction failed", e);
+            return false;
         }
     }
 

@@ -32,7 +32,9 @@ public class AuditProperties {
         private String methodTopic = "audit-method-logs";
         private String httpTopic = "audit-http-logs";
         private String acks = "all";
+        private int maxInFlightRequestsPerConnection = 1;
         private int retries = Integer.MAX_VALUE;
+        private boolean enableIdempotence = true;
 
     }
 
