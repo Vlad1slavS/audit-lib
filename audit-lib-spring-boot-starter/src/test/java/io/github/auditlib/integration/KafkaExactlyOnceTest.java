@@ -134,8 +134,12 @@ class KafkaExactlyOnceTest {
 
         for (int i = 0; i < 5; i++) {
             testService.processData("test-data-" + i);
-            Thread.sleep(50);
         }
+
+        await()
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .until(() -> consumeMethodMessages(10).size() == 10);
 
         List<JsonNode> methodEvents = consumeMethodMessages(10);
 
@@ -190,12 +194,15 @@ class KafkaExactlyOnceTest {
     void HttpEventKeyUniqueness() throws Exception {
 
         HttpAuditEvent httpEvent1 = HttpAuditEvent.createIncomingEvent("POST", "/api/test", "", 200, "");
-
         HttpAuditEvent httpEvent2 = HttpAuditEvent.createOutgoingEvent("POST", "/api/test", "", 200, "");
 
         auditLogService.logHttpEvent(httpEvent1);
-        Thread.sleep(100);
         auditLogService.logHttpEvent(httpEvent2);
+
+        await()
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .until(() -> consumeHttpMessages(2).size() == 2);
 
         List<JsonNode> httpEvents = consumeHttpMessages(2);
 

@@ -84,10 +84,13 @@ class KafkaIntegrationTest {
         methodConsumer = createConsumer("test-audit-method-logs", methodGroupId);
         httpConsumer = createConsumer("test-audit-http-logs", httpGroupId);
 
-        Thread.sleep(2000);
-
-        methodConsumer.poll(Duration.ofMillis(100));
-        httpConsumer.poll(Duration.ofMillis(100));
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    methodConsumer.poll(Duration.ofMillis(100));
+                    httpConsumer.poll(Duration.ofMillis(100));
+                });
 
     }
 
