@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_PATTERN">%m%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <RollingFile name="AuditFile"
+                     fileName="${sys:audit.file.path:-logs/audit.log}"
+                     filePattern="${sys:audit.file.path:-logs/audit.log}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${sys:audit.file.maxFileSize:-1MB}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${sys:audit.file.maxFiles:-10}"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <Logger name="AUDIT_METHOD_CONSOLE" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="AUDIT_METHOD_FILE" level="DEBUG" additivity="false">
+            <AppenderRef ref="AuditFile"/>
+        </Logger>
+
+        <Logger name="AUDIT_HTTP_CONSOLE" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="AUDIT_HTTP_FILE" level="DEBUG" additivity="false">
+            <AppenderRef ref="AuditFile"/>
+        </Logger>
+
+        <Logger name="com.example.auditlib" level="TRACE" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
