@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="AUDIT_PATTERN">%m%n</Property>
+        <Property name="CONSOLE_PATTERN">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %m%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}"/>
+        </Console>
+
+        <Console name="AuditConsole" target="SYSTEM_OUT">
+            <PatternLayout pattern="[AUDIT] ${AUDIT_PATTERN}"/>
+        </Console>
+
+        <RollingFile name="TestAuditFile"
+                     fileName="target/test-logs/audit-test.log"
+                     filePattern="target/test-logs/audit-test-%i.log.gz">
+            <PatternLayout pattern="${AUDIT_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <Logger name="AUDIT_METHOD_CONSOLE" level="DEBUG" additivity="false">
+            <AppenderRef ref="AuditConsole"/>
+        </Logger>
+
+        <Logger name="AUDIT_METHOD_FILE" level="DEBUG" additivity="false">
+            <AppenderRef ref="TestAuditFile"/>
+        </Logger>
+
+        <Logger name="AUDIT_HTTP_CONSOLE" level="DEBUG" additivity="false">
+            <AppenderRef ref="AuditConsole"/>
+        </Logger>
+
+        <Logger name="AUDIT_HTTP_FILE" level="DEBUG" additivity="false">
+            <AppenderRef ref="TestAuditFile"/>
+        </Logger>
+
+        <Logger name="io.github.auditlib" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.springframework" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.kafka" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.testcontainers" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
