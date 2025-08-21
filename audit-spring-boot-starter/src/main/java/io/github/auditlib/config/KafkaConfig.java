@@ -5,7 +5,6 @@ import io.github.auditlib.service.KafkaService;
 import io.github.auditlib.service.KafkaServiceImpl;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -22,11 +21,6 @@ import java.util.Map;
  */
 @Configuration
 @EnableTransactionManagement
-@ConditionalOnProperty(
-        value = "starter.kafka.enabled",
-        havingValue = "true",
-        matchIfMissing = false
-)
 public class KafkaConfig {
 
     @Bean
