@@ -29,8 +29,8 @@ public class AuditProperties {
     public static class Kafka {
 
         private String bootstrapServers = "localhost:9092";
-        private String methodTopic = "audit-method-logs";
-        private String httpTopic = "audit-http-logs";
+        private String methodTopic = "audit.methods";
+        private String httpTopic = "audit.requests";
         private String acks = "all";
         private int maxInFlightRequestsPerConnection = 1;
         private int retries = Integer.MAX_VALUE;
